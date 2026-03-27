@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard | A.K Mutua & Co</title>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 0; }
+header {
+  background: #0a2463;
+  color: #fff;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+header h2 { margin: 0; font-size: 1.4rem; }
+header .btns button {
+  background: #073366;
+  color: #fff;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+header .btns button:hover { background: #051f4d; }
+
+.container { max-width: 1100px; margin: 20px auto; padding: 0 20px; }
+
+.section {
+  background: #fff;
+  padding: 20px;
+  margin-bottom: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.section h3 { color: #0a2463; margin-top: 0; margin-bottom: 15px; }
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0 15px 0;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+button.action-btn {
+  background: #0a2463;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+button.action-btn:hover { background: #073366; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+table th, table td {
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: left;
+}
+
+table th { background: #0a2463; color: #fff; }
+
+@media (min-width: 768px) {
+  .form-flex { display: flex; gap: 20px; }
+  .form-flex .form-group { flex: 1; }
+}
+</style>
+</head>
+<body>
+
+<!-- Authentication Check -->
+<script>
+if (!localStorage.getItem('adminAuth')) {
+  window.location.href = 'login.html';
+}
+</script>
+
+<header>
+  <h2><i class="fas fa-user-shield"></i> Admin Dashboard</h2>
+  <div class="btns">
+    <button onclick="window.location.href='index.html'"><i class="fas fa-home"></i> Home</button>
+    <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Add Client Section -->
+  <div class="section">
+    <h3>Add New Client</h3>
+    <div class="form-group">
+      <input type="text" id="name" placeholder="Client Name">
+      <input type="text" id="caseNumber" placeholder="Case Number">
+      <textarea id="caseDescription" placeholder="Case Description (max 3 lines)"></textarea>
+      <input type="text" id="phone" placeholder="Phone Number">
+      <input type="text" id="email" placeholder="Email Address">
+    </div>
+    <button class="action-btn" onclick="addClient()">Add Client</button>
+  </div>
+
+  <!-- Search Clients Section -->
+  <div class="section">
+    <h3>Search Clients</h3>
+    <div class="form-group">
+      <input type="text" id="searchQuery" placeholder="Enter Name or Case Number">
+    </div>
+    <button class="action-btn" onclick="searchClients()">Search</button>
+
+    <table id="clientsTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Case Number</th>
+          <th>Description</th>
+          <th>Phone</th>
+          <th>Email</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+const API_URL = 'http://localhost:5000'; // Replace with Render backend URL
+
+// ------------------ AUTH ------------------
+if (!localStorage.getItem('adminAuth')) {
+  window.location.href = 'login.html';
+}
+
+function logout() {
+  localStorage.removeItem('adminAuth');
+  window.location.href = 'login.html';
+}
+
+// ------------------ FORM VALIDATION ------------------
+function validateClientForm(name, caseNumber, phone, email) {
+  if (!name || !caseNumber || !phone || !email) {
+    alert('Please fill in all required fields.');
+    return false;
+  }
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailPattern.test(email)) {
+    alert('Please enter a valid email address.');
+    return false;
+  }
+  return true;
+}
+
+// ------------------ ADD CLIENT ------------------
+async function addClient() {
+  const name = document.getElementById('name').value.trim();
+  const caseNumber = document.getElementById('caseNumber').value.trim();
+  const caseDescription = document.getElementById('caseDescription').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const email = document.getElementById('email').value.trim();
+
+  // Validation
+  if (!validateClientForm(name, caseNumber, phone, email)) return;
+
+  try {
+    const res = await fetch(`${API_URL}/clients`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': 'password123' // Match your backend .env
+      },
+      body: JSON.stringify({ name, caseNumber, caseDescription, phone, email })
+    });
+
+    const data = await res.json();
+    alert(data.message);
+
+    // Clear form after adding
+    document.getElementById('name').value = '';
+    document.getElementById('caseNumber').value = '';
+    document.getElementById('caseDescription').value = '';
+    document.getElementById('phone').value = '';
+    document.getElementById('email').value = '';
+
+    // Optional: Refresh table immediately
+    searchClients();
+
+  } catch (error) {
+    console.error('Error adding client:', error);
+    alert('Failed to add client. Please try again.');
+  }
+}
+
+// ------------------ SEARCH CLIENT ------------------
+async function searchClients() {
+  const query = document.getElementById('searchQuery').value.trim();
+
+  try {
+    const res = await fetch(`${API_URL}/clients/search?query=${encodeURIComponent(query)}`, {
+      headers: { 'x-admin-password': 'password123' }
+    });
+
+    const clients = await res.json();
+    const tbody = document.querySelector('#clientsTable tbody');
+    tbody.innerHTML = '';
+
+    if (clients.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No clients found</td></tr>';
+      return;
+    }
+
+    clients.forEach(c => {
+      tbody.innerHTML += `<tr>
+        <td>${c.name}</td>
+        <td>${c.caseNumber}</td>
+        <td>${c.caseDescription}</td>
+        <td>${c.phone}</td>
+        <td>${c.email}</td>
+      </tr>`;
+    });
+
+  } catch (error) {
+    console.error('Error searching clients:', error);
+    alert('Failed to fetch clients. Please try again.');
+  }
+}
+</script>
+
+</body>
+</html>

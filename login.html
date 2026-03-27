@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login | A.K Mutua & Co</title>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f6f8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+.login-container {
+  background: #fff;
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  width: 300px;
+  text-align: center;
+}
+.login-container h2 {
+  margin-bottom: 20px;
+  color: #0a2463;
+}
+.login-container input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+.login-container button {
+  width: 100%;
+  padding: 10px;
+  background: #0a2463;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+.login-container button:hover { background: #073366; }
+.error { color: red; margin-top: 10px; }
+.home-link {
+  display: inline-block;
+  margin-top: 15px;
+  color: #0a2463;
+  text-decoration: none;
+  font-weight: 500;
+}
+.home-link:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="login-container">
+  <h2><i class="fas fa-user-shield"></i> Admin Login</h2>
+  <input type="password" id="password" placeholder="Enter Admin Password">
+  <button onclick="login()">Login</button>
+  <div class="error" id="error"></div>
+  <a href="index.html" class="home-link"><i class="fas fa-home"></i> Return Home</a>
+</div>
+
+<script>
+const adminPassword = 'password123'; // must match .env password
+
+function login() {
+  const pass = document.getElementById('password').value;
+  if (pass === adminPassword) {
+    localStorage.setItem('adminAuth', 'true');
+    window.location.href = 'dashboard.html';
+  } else {
+    document.getElementById('error').textContent = 'Incorrect password';
+  }
+}
+</script>
+
+</body>
+</html>
