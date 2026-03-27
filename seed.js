@@ -910,10 +910,17 @@ async function seed() {
       const email = ''; // leave blank
 
       // Set createdAt to a random date within the case year
-      const start = new Date(year, 0, 1);
-      const end = new Date(year, 11, 31);
-      const createdAt = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
-      const updatedAt = createdAt;
+      // Inside the loop, after generating year
+const start = new Date(year, 0, 1);
+let end;
+if (year === 2026) {
+  // For 2026, end at today (March 27, 2026) – we use current date
+  end = new Date(); // this will be the moment the script runs
+} else {
+  end = new Date(year, 11, 31);
+}
+const createdAt = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+const updatedAt = createdAt;
 
       cases.push({
         name,
