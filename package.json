@@ -12,7 +12,13 @@
     "type": "git",
     "url": "git+https://github.com/Codewithkaranja/A.K-Mutua-Company-Advocates.git"
   },
-  "keywords": ["law","dashboard","clients","nodejs","mongodb"],
+  "keywords": [
+    "law",
+    "dashboard",
+    "clients",
+    "nodejs",
+    "mongodb"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {

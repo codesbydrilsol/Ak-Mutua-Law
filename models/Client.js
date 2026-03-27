@@ -5,7 +5,7 @@ const clientSchema = new mongoose.Schema({
   caseNumber: { type: String, required: true },
   caseDescription: { type: String },
   phone: { type: String, required: true },
-  email: { type: String, required: true }
+  email: { type: String, required: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Client', clientSchema);
