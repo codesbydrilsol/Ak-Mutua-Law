@@ -1,6 +1,6 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const Client = require('./models/Client'); // adjust path if needed
+const Client = require('./models/Client');// adjust path if needed
 
 // ------------------------------------------------------------------
 // PHONE NUMBERS – all numbers from your list, cleaned and formatted
@@ -762,6 +762,18 @@ const caseTypes = [
   }
 ];
 
+// COURT LOCATIONS (with proper names)
+// ------------------------------------------------------------------
+const courtLocations = [
+  'Nairobi Law Courts', 'Mombasa High Court', 'Kisumu Chief Magistrate\'s Court',
+  'Nakuru Environment and Land Court', 'Eldoret Industrial Court', 'Machakos Law Courts',
+  'Meru High Court', 'Kisii Law Courts', 'Kitale Chief Magistrate\'s Court', 'Thika Law Courts',
+  'Malindi High Court', 'Garissa Law Courts', 'Kakamega High Court', 'Nyeri Law Courts',
+  'Embu Law Courts', 'Bungoma High Court', 'Busia Law Courts', 'Vihiga Magistrate\'s Court',
+  'Homa Bay Law Courts', 'Migori High Court', 'Kitui Law Courts', 'Makueni Law Courts'
+];
+
+// Helper functions
 // Helper functions
 function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -778,17 +790,89 @@ function generateName() {
   return `${firstName} ${lastName}`;
 }
 
-function generateCaseDescription() {
-  const caseType = randomItem(caseTypes);
-  const template = randomItem(caseType.templates);
-  const locations = ['Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Machakos', 'Meru', 'Kisii', 'Kitale', 'Thika', 'Malindi', 'Garissa'];
-  const location = randomItem(locations);
-  const date = `${Math.floor(Math.random() * 28) + 1}/${Math.floor(Math.random() * 12) + 1}/${Math.floor(Math.random() * (2025 - 2013 + 1) + 2013)}`;
-  const detail = `Accused allegedly ${template.toLowerCase()} at ${location} on or about ${date}.`;
-  const extra = `The matter is pending hearing before the ${Math.random() > 0.5 ? 'High Court' : 'Magistrate Court'}.`;
-  return `${detail} ${extra}`;
+
+function generateStatus(year) {
+  if (year <= 2022) {
+    // 90% closed, 10% pending for older cases
+    return Math.random() < 0.9 ? 'closed' : 'pending';
+  } else {
+    // 90% pending, 10% closed for newer cases
+    return Math.random() < 0.9 ? 'pending' : 'closed';
+  }
 }
 
+function generateCaseDescription(caseTypeObj, year, status) {
+  const template = randomItem(caseTypeObj.templates);
+  const location = randomItem(courtLocations);
+  const date = `${Math.floor(Math.random() * 28) + 1}/${Math.floor(Math.random() * 12) + 1}/${year}`;
+
+  let stage = '';
+  let nextHearing = '';
+  let outcome = '';
+
+  if (status === 'closed') {
+    const outcomes = [
+      'accused convicted and sentenced to 5 years imprisonment',
+      'case dismissed for lack of evidence',
+      'settled out of court with compensation',
+      'accused acquitted on appeal',
+      'matter resolved through plea bargain'
+    ];
+    outcome = randomItem(outcomes);
+    stage = `The matter was concluded with ${outcome}.`;
+  } else {
+    const stages = [
+      'awaiting plea taking',
+      'at the hearing stage (3rd mention)',
+      'adjourned for further hearing on 15/6/2025',
+      'awaiting judgment from the High Court',
+      'pre‑trial conference scheduled for next month',
+      'under judicial review'
+    ];
+    stage = randomItem(stages);
+    const nextDates = ['20/8/2025', '3/9/2025', '15/10/2025', '1/11/2025', '10/12/2025'];
+    nextHearing = ` Next hearing set for ${randomItem(nextDates)}.`;
+  }
+
+  let electionNote = '';
+  if (caseTypeObj.category === 'Political Case' && [2013, 2017, 2022].includes(year)) {
+    electionNote = ` This case arose from the ${year} general elections.`;
+  }
+
+  const intro = randomItem([
+    `The accused is charged with ${template.toLowerCase()}.`,
+    `Proceedings commenced after the accused was alleged to have ${template.toLowerCase()}.`,
+    `The prosecution alleges that on or about ${date}, the accused ${template.toLowerCase()}.`
+  ]);
+
+  const locationInfo = `The incident occurred at ${location} in ${year}.`;
+
+  let description = `${intro} ${locationInfo}${electionNote} Currently, the case is ${stage}${nextHearing}`;
+
+  if (Math.random() > 0.6) {
+    const extra = randomItem([
+      `The accused is represented by ${Math.random() > 0.5 ? 'Mr. Otieno' : 'Ms. Wanjiku'} of the firm M/S Kamau & Co.`,
+      `The prosecution has called ${Math.floor(Math.random() * 5) + 1} witnesses so far.`,
+      `Bail was granted on condition of surrendering travel documents.`,
+      `The case has been ongoing for ${Math.floor(Math.random() * 3) + 1} years.`
+    ]);
+    description += ` ${extra}`;
+  }
+
+  return description;
+}
+
+function generateStatus(year) {
+  if (year <= 2022) {
+    // 90% closed, 10% pending for older cases
+    return Math.random() < 0.9 ? 'closed' : 'pending';
+  } else {
+    // 90% pending, 10% closed for newer cases
+    return Math.random() < 0.9 ? 'pending' : 'closed';
+  }
+}
+// ------------------------------------------------------------------
+// MAIN SEED FUNCTION
 // ------------------------------------------------------------------
 // MAIN SEED FUNCTION
 // ------------------------------------------------------------------
@@ -797,36 +881,58 @@ async function seed() {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('✅ Connected to MongoDB');
 
-    // Optional: Clear existing data (uncomment to start fresh)
-    // await Client.deleteMany({});
-    // console.log('Cleared existing clients');
+    // Optional: clear existing data
+     await Client.deleteMany({});
+     console.log('Cleared existing clients');
 
     const total = 1000;
-    const clients = [];
+    const cases = [];
 
-    for (let i = 1; i <= total; i++) {
+    // Generate raw cases (without case numbers)
+    for (let i = 0; i < total; i++) {
       const year = Math.floor(Math.random() * (2025 - 2013 + 1)) + 2013;
-      const caseNumber = `AK-${i}-${year}`;
-
+      const caseType = randomItem(caseTypes);
       const name = generateName();
-      const phone = phoneNumbers[(i - 1) % phoneNumbers.length];
-      const caseDescription = generateCaseDescription();
-      const email = ''; // leave blank as requested
+      const phone = phoneNumbers[i % phoneNumbers.length];
+      const status = generateStatus(year);
+      const description = generateCaseDescription(caseType, year, status);
+      const email = ''; // leave blank
 
-      // Set createdAt to a random date within the case year
       const start = new Date(year, 0, 1);
       const end = new Date(year, 11, 31);
       const createdAt = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
       const updatedAt = createdAt;
 
-      clients.push({
+      cases.push({
         name,
-        caseNumber,
-        caseDescription,
+        year,
         phone,
+        description,
         email,
+        status,
         createdAt,
         updatedAt
+      });
+    }
+
+    // Sort by year descending (newest first)
+    cases.sort((a, b) => b.year - a.year);
+
+    // Assign sequential case numbers (AKM-001-year to AKM-1000-year)
+    const clients = [];
+    for (let idx = 0; idx < cases.length; idx++) {
+      const c = cases[idx];
+      const seq = String(idx + 1).padStart(3, '0');
+      const caseNumber = `AKM-${seq}-${c.year}`;
+      clients.push({
+        name: c.name,
+        caseNumber,
+        caseDescription: c.description,
+        phone: c.phone,
+        email: c.email,
+        status: c.status,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt
       });
     }
 
